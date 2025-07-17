@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <title>ドラクエタクト ダメージ計算</title>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+   <title>ドラクエタクト ダメージ計算</title>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: sans-serif;
+        line-height: 1.6;
+        padding: 20px;
+        background-color: #f5f5f5;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-bottom: 200px;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .header, .footer-section {
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header a, .footer-section a {
+        color: #4CAF50;
+        text-decoration: none;
+        margin: 0 10px;
+        display: inline-block;
+    }
+
+    .header a:hover, .footer-section a:hover {
+        text-decoration: underline;
+    }
+
+    .calculator-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr)); /* 1:1の比率を強制 */
+        gap: 20px;
+        margin-bottom: 30px;
+        align-items: start; /* 上端揃え */
+    }
+
+    .attack-side, .defense-side {
+        width: 100%;
+    }
+
+    .section {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .section + .section {
+        margin-top: 20px; /* セクション間のマージン */
+    }
+
+    .section h2 {
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #4CAF50;
+    }
+
+    .section h3 {
+        margin: 15px 0;
+        color: #2E7D32;
+    }
+
+    .input-group {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: nowrap;
+    }
+
+    .input-group label {
+        width: 65%;
+        padding-right: 10px;
+        font-size: 0.95em;
+    }
+
+    .input-group input[type="number"],
+    .input-group select {
+        width: 35%;
+        min-width: 100px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .calculation-wrapper {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 20px;
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    .calculation-container {
+        background: #fff;
+        padding: 20px 40px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        max-width: 800px;
+        width: 90%;
+        pointer-events: auto;
+        text-align: center;
+    }
+
+    .calculate-button {
+        padding: 12px 40px;
+        font-size: 18px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        margin-bottom: 20px;
+    }
+
+    .calculate-button:hover {
+        background-color: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    #result {
+        font-size: 1.2em;
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #f8f8f8;
+        border-radius: 4px;
+    }
+
+    .footer-section {
+        margin-bottom: 180px;
+    }
+
+    @media (max-width: 767px) {
+.calculator-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+
+.container {
+    padding-bottom: 100px;
+}
+
+/* スクロール可能なコンテナ */
+.attack-side, .defense-side {
+    height: 50vh;
+    overflow-y: auto;
+    position: relative; /* 固定ヘッダーの基準位置 */
+    margin-bottom: 15px;
+}
+
+/* 固定するヘッダー部分 */
+.attack-input, .def-input {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    padding: 15px;
+    z-index: 10;
+    border-radius: 8px 8px 0 0;
+}
+
+.attack-input h2, .def-input h2 {
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #4CAF50;
+}
+
+/* スクロールバーのカスタマイズ */
+.attack-side::-webkit-scrollbar,
+.defense-side::-webkit-scrollbar {
+    width: 6px;
+}
+
+.attack-side::-webkit-scrollbar-track,
+.defense-side::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.attack-side::-webkit-scrollbar-thumb,
+.defense-side::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+/* その他の既存スタイル */
+.section {
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #fff;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 以下は既存のスタイルをそのまま維持 */
+.section h3 {
+    margin: 10px 0 8px 0;
+    background: #fff;
+}
+
+.input-group {
+    margin-bottom: 6px;
+    min-height: 35px;
+}
+
+.input-group label {
+    width: 65%;
+    font-size: 0.9em;
+    padding-right: 8px;
+    line-height: 1.2;
+}
+
+.input-group input[type="number"],
+.input-group select {
+    width: 35%;
+    min-width: 80px;
+    padding: 6px;
+    height: 32px;
+}
+
+/* 計算ボタン周りは変更なし */
+.calculation-wrapper {
+    bottom: 10px;
+}
+
+.calculation-container {
+    padding: 15px;
+    width: 95%;
+}
+
+.calculate-button {
+    padding: 10px 30px;
+    font-size: 16px;
+}
+
+.footer-section {
+    margin-bottom: 100px;
+}
+}
+</style>
+</head>
+<body>
+   <div class="container">
+<div class="header">
+    <a href="{{ url_for('index') }}">トップページ</a>
+    <a href="{{ url_for('simple') }}">簡易版</a>
+    <a href="{{ url_for('other_page') }}">使い方</a>
+    <a href="{{ url_for('show_version') }}">バージョン情報</a>
+</div>
+       <h2>使い方、ご注意</h2>
+
+       <div class="section">
+        こちらは【物理】のみのダメージ計算になります。<br>
+        経緯としましては、タクトサーチ様が更新されなくなった、なら自分で作ろう<br>
+        と思って作ったら、3悪魔という恐ろしいキャラが登場した…。という感じです。<br>
+        <br>
+        どうせ、そこそこうまく作れたなら、公開しようと思いこの度開設しました。<br>
+        デザイン面はすいません。本当に苦手なのでこれくらいで。<br>
+        この辺りは随時更新していきたいと思います。<br>
+        キャラ別も対応ができないので、基本数値は全部入力という形を取りました。<br>
+     </div>
+
+     <div class="section">
+        ※ご注意点※<br>
+        使用におきましては、かなり誤差が少ないものになったと思われますが、<br>
+        完全なる責任は負えません。申し訳ないです。<br>
+        なのであくまで参考程度にお使い下さい。<br>
+        <br>
+        一応公開したのがギルド大会中だったので敢えて書きますが、このアプリのせいで負けた、とかは無しでお願いします。<br>
+        模擬戦などでテストをしっかり確認して頂いた上で、多少の誤差はある、との認識でお願い致します。<br>
+        <br>
+        特に開花している相手に対しては、開花状況が完全にはわからないので、計算結果がずれたりします。<br>
+        ですが検証上あまりにも計算値が多く出すぎる、ということはないので、目安としてお考え下さい。<br>
+        <br>
+        また、多段には未対応なので、1回の攻撃で単純に回数を計算して下さい。<br>
+        すいませんがニズゼルファは随時対応予定です。<br>
+     </div>
+
+     <div class="section">
+        ※具体例※<br>
+        ◆フル開花完凸の魔剣士ピサロのメラ物理「インフェルノブレイク」で、ドレアムを攻撃した場合<br>
+        <br>
+        ・攻撃力1038<br>
+        ・特技倍率はMAXなので450%<br>
+        <br>
+        ・リーダースキルは自分の攻撃力アップのみなので、攻撃時の数字に反映<br>
+        ・凸特性でインフェルノブレイク10%威力アップ<br>
+        ・凸特性で物理威力10%アップ<br>
+        ・才能開花で物理威力合計5%アップ（メラ物理込み）<br>
+        ・属性ランクアップで1.5%威力アップ<br>
+        <br>
+        ・バフはデフォルトでメラフォース状態で20％<br>
+        <br>
+        ・ばつぐんはドレアムがメラ大弱点のため、才能開花の物理とメラの合計5%<br>
+        <br>
+        ・ドレアム守備力617<br>
+        <br>
+        ・属性耐性はドレアムがフル開花を前提として5%<br>
+        <br>
+        ・装備での属性耐性はなし<br>
+        <br>
+        ・物理耐性はドレアム特有の30%に加えて、開花でのメラ物理耐性5%<br>
+        <br>
+        ・ドレアムは標準で20%軽減があるので適用<br>
+        <br>
+        ・闘技場での戦闘のため30%減<br>
+        <br>
+        ・アプリでの計算値＝"1383"<br>
+        ・実際に表記されたダメージ＝"1382"<br>
+        （ここはどこかの端数処理ミスしてると思われますので今後対応）<br>
+        <br>
+        現状以上のような結果が得られます。<br>
+        <br>
+        また、イレブンでゾーン状態に入れ、テンションを付与、ガンガン付与、完全デイン攻撃盛りの装備でバリアなしのレックに、<br>
+        6157の計算に対し、6152でしたので、そこまで差が大きい感じではなさそうです。<br>
+        <br>
+        </div>
+     <div class="section">
+        ※各項目の詳細説明※<br><br>
+        タクトの進化というか、インフレというかで、項目が多くなってすいません。<br>
+        ※攻撃力※<br>
+        ・これは奇数バイシなど未考慮なので、攻撃の際の数値を入れて下さい。模擬戦や個人闘技での行動後数値の確認をお勧めします。<br>
+        <br>
+        ※威力アップ※<br>
+        ・リダスキは威力アップのみです。配置で乗っているかも確認願います。ソロやドレアムが代表的に25%upがあります。<br>
+        ・他に細々と項目ありますが、威力アップに関しては、特性に書かれている威力アップや、開花の合計を一か所に記入しても大丈夫です。<br>
+        ・ただし、等倍以下に関しては属性が付いた威力アップは、合算したり、入力しないで下さい。<br>
+        <br>
+        ※各種バフ※<br>
+        ・これらは全部個別で乗っかる形になるので、戦闘中の基本の中にある〇%アップはすべて個別に記入して下さい。<br>
+        ・ガンガン系はドレアム、エスタークを代表に、ダメージを受けても発動しますので、基本欄確認願います。<br>
+        ・チャモロとかククールは未所持で乗り方がわからないので、予備を設置しています。<br>
+        <br>
+        ※ばつぐん※<br>
+        ・これも完全に別計算なのですが、ばつぐんの%自体はすべて足し算です。開花のばつぐん、武器のばつぐんの%の合計値を入れて下さい。<br>
+        ・念のためこちらにも書きますが、ばつぐんは大弱点、弱点のみで、それ以外の場合は開花に明記があっても、記入なしでお願いします。<br>
+        <br>
+        ※守備力※<br>
+        ・これも先制する時でも受けの時でも、攻撃の際の数値を入力して下さい。<br>
+        <br>
+        ※属性※<br>
+        ・相手の耐性に合わせて選択して下さい。環境的に現状「弱点」表示は基本無視でOKで、大弱点、等倍、半減、激減を選びます。<br>
+        <br>
+        ※属性耐性※<br>
+        ・装備やアクセにある〇〇属性〇%アップが該当します。これは物理の軽減とは別計算で、相手の装備を見て入力して下さい。<br>
+        ・検証では、大弱点が弱点や等倍が軽減に表記が変わったりしますが、これはアクセや装備による耐性の変化に依存しています。<br>
+        ・ですので、〇〇属性物理耐性〇%アップ、とは別けて記入して下さい。<br>
+        ・「開花」の入力項目があります。今回自分の無知で一番困った点なのですが<br>
+           フル開花前提では、大弱点で攻撃する場合、戦闘中に表記が無いですが、耐性が最大5%アップしています。<br>
+           なので開花キャラ相手に物理で大弱点攻撃をする際は基本的に5%と入れて下さい。<br>
+        ・上記仕様から、レックの「無属性耐性大幅アップ」に対して無属性攻撃をする場合、激減設定で計算が可能になります<br>
+           <br>
+        ※すべてのダメージ軽減※<br>
+        ・パネルや開花にある、すべてのダメージを〇％軽減する、という項目です。<br>
+        ・これは未だ結論が出切っていないのですが、数値の結果としては別計算が正しそうです。<br>
+        ・パネルフル開花なら5%、開花キャラなら1%が多いと思いますので、記入して下さい。<br>
+        <br>
+        ※物理耐性の計算※<br>
+        ・ドレアム、大魔王は、検証したところ、「消せるけど物理耐性30%の装備を持ってる」という解釈が正しかったようです。さらに固有の20%軽減があると。<br>
+        ・ですので、これらは他の物理耐性と合算します。<br>
+        ・相手の特性を見て、対応属性の耐性や、属性なしでも物理耐性装備がある場合は入力して下さい。<br>
+        ・開花キャラは項目に属性物理耐性があるので、相手の数値を見て記入して下さい。<br>
+        ・王子ピサロは別でまた物理耐性アップをバラマキます。相手に居て攻撃の際はご確認下さい。<br>
+        <br>
+        ※標準軽減・バフ※<br>
+        ・勇者系、魔王系の軽減はここで入力してください。これらはすべて乗っかるので別計算です。<br>
+        ・バリアはデスタムーアやウルノーガなどの50%軽減があれば記入。<br>
+        ・伝説のまものつかいのバラマキバフも別計算です。<br>
+        ・勇者姫に代表される陣の展開も別計算です。<br>
+        ・ゾーンはイレブンのみですが軽減が別でまた乗るようです。戦闘中の基本で別表記なので恐らく別計算しています。<br>
+        ・補助キャラから軽減をもらうことがありますが、その際も記入。<br>
+        ・〇〇フォースの状態でフォース対応の攻撃をする場合軽減されます。<br>
+        <br>
+        ※デバフ系※<br>
+        ・あまり機会はないと思いますが、イレブンの暗黒斬やロト血のダウンが考えられたので一応です。<br>
+        ・被ダメは思いつく限り、ウルノーガのレッドオーブあたりですが、一応加えておきます。<br>
+        <br>
+        ※フィールド軽減※<br>
+        ・一応闘技場を念頭に置いているので、デフォで30%を入れています。<br>
+
+        <br>
+        ここまで読んで頂いた方ありがとうございます。<br>
+        改めて他人に頼らず厳密に計算してみて、色々な自分の無知だったり、新しい知識を得られました。<br>
+        タクトサーチ様がさぞ大変であっただろうとお察し致します。<br>
+        <br>
+        これが少しでも皆様のタクト活動にお役に立てればと思います。<br>
+        <br>
+        レビューや修正依頼は是非ともお尋ね下さい。間違っている可能性も否定できまえせんので。<br>
+        呪文、体技、ブレスに関しては、もっとややこしく、キャラ毎の基礎ダメージを算出する作業がやばいので、鋭意作成の予定…？<br>
+        <br>
+        </div>
+        <div class="footer-section">
+            こちらはタクトサーチ様などの資料を参考に作成しました。<br>
+            ご支援、フィードバックは今後の物理計算以外でも励みになります。<br>
+            他にもバグや露骨な計算違いがありましたらご一報下さい。<br>
+            また、当アプリを参考にして行った戦闘や闘技場の結果に関しては、責任を負いかねます。<br>
+            テスト段階である点をご理解した上でご利用下さい。<br>
+            <br>
+            また、当サイトはドラクエタクト公式とは一切関係はございません。<br>
+            個人的な解析サイトとなります。すべての著作権はゲーム制作社様となります。<br>
+            <br>
+<div class="header">
+    <a href="{{ url_for('index') }}">トップページ</a>
+    <a href="{{ url_for('simple') }}">簡易版</a>
+    <a href="{{ url_for('other_page') }}">使い方</a>
+    <a href="{{ url_for('show_version') }}">バージョン情報</a>
+</div>
+            ver1.4.0　<br>
+            <br>
+            お問い合わせ、ご質問はお気軽にどお尋ね下さい。<br>
+            XのID→@hansha_ohemaru　mail:msz006.kobo@gmail.com<br>
+
+            ©kobokobo All Right Reserved
+                </div>
+    </div>

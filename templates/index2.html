@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ドラクエタクト ダメージ計算</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 200px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header, .footer-section {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header a, .footer-section a {
+            color: #4CAF50;
+            text-decoration: none;
+            margin: 0 10px;
+            display: inline-block;
+        }
+
+        .header a:hover, .footer-section a:hover {
+            text-decoration: underline;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            align-items: start;
+        }
+
+        .attack-side, .defense-side {
+            width: 100%;
+        }
+
+        .section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4CAF50;
+        }
+
+        .section h3 {
+            margin: 15px 0;
+            color: #2E7D32;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: nowrap;
+        }
+
+        .input-group label {
+            width: 65%;
+            padding-right: 10px;
+            font-size: 0.95em;
+        }
+
+        .input-group input[type="number"],
+        .input-group select {
+            width: 35%;
+            min-width: 100px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .buff-toggles {
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .buff-toggle {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .base-attack {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+            padding: 5px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+        }
+
+        .calculation-wrapper {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 20px;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .calculation-container {
+            background: #fff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 800px;
+            width: 90%;
+            pointer-events: auto;
+            text-align: center;
+        }
+
+        .calculate-button {
+            padding: 12px 40px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .calculate-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        #result {
+            font-size: 1.2em;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+        }
+
+        .footer-section {
+            margin-bottom: 180px;
+        }
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            gap: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4CAF50;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .toggle-label {
+            flex-grow: 1;
+        }
+
+        .toggle-state {
+            font-weight: bold;
+            color: #666;
+            min-width: 40px;
+        }
+        @media (max-width: 767px) {
+    .calculator-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .container {
+        padding-bottom: 100px;
+    }
+
+    /* スクロール可能なコンテナ */
+    .attack-side, .defense-side {
+        height: 50vh;
+        overflow-y: auto;
+        position: relative; /* 固定ヘッダーの基準位置 */
+        margin-bottom: 15px;
+    }
+
+    /* 固定するヘッダー部分 */
+    .attack-input, .def-input {
+        position: sticky;
+        top: 0;
+        background: #fff;
+        padding: 15px;
+        z-index: 10;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .attack-input h2, .def-input h2 {
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #4CAF50;
+    }
+
+    /* スクロールバーのカスタマイズ */
+    .attack-side::-webkit-scrollbar,
+    .defense-side::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .attack-side::-webkit-scrollbar-track,
+    .defense-side::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .attack-side::-webkit-scrollbar-thumb,
+    .defense-side::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+    /* その他の既存スタイル */
+    .section {
+        padding: 15px;
+        margin-bottom: 15px;
+        background: #fff;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* 以下は既存のスタイルをそのまま維持 */
+    .section h3 {
+        margin: 10px 0 8px 0;
+        background: #fff;
+    }
+
+    .input-group {
+        margin-bottom: 6px;
+        min-height: 35px;
+    }
+
+    .input-group label {
+        width: 65%;
+        font-size: 0.9em;
+        padding-right: 8px;
+        line-height: 1.2;
+    }
+
+    .input-group input[type="number"],
+    .input-group select {
+        width: 35%;
+        min-width: 80px;
+        padding: 6px;
+        height: 32px;
+    }
+
+    /* 計算ボタン周りは変更なし */
+    .calculation-wrapper {
+        bottom: 10px;
+    }
+
+    .calculation-container {
+        padding: 15px;
+        width: 95%;
+    }
+
+    .calculate-button {
+        padding: 10px 30px;
+        font-size: 16px;
+    }
+
+    .footer-section {
+        margin-bottom: 100px;
+    }
+    }
+    </style>
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>ドラクエタクト 物理ダメージ計算 WEBアプリ</h3><br>
+        <h3>超簡易Ver</h3>
+
+        <div class="header">
+            <a href="{{ url_for('index') }}">詳細計算Ver.（トップ）</a>
+            <a href="{{ url_for('simple') }}">超簡易計算Ver.</a>
+            <a href="{{ url_for('other_page') }}" target="_blank">※使い方、ご注意点※</a>
+            <a href="{{ url_for('show_version') }}" target="_blank">バージョン情報</a>
+        </div>
+
+        <form id="damage-form">
+            <div class="calculator-grid">
+                <!-- 攻撃側 -->
+                <div class="attack-side">
+                    <div class="section">
+                        <h2>攻撃側</h2>
+                        <div class="input-group">
+                            <label for="attack"><h3>攻撃力</h3></label>
+                            <input type="number" id="attack" name="attack" step="0.01">
+                        </div>
+                        <div class="buff-toggles">
+                            <div class="toggle-switch">
+                                <label class="switch">
+                                    <input type="checkbox" id="rida_buff" onchange="updateAttack()">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="toggle-label">リーダースキル攻撃力アップ</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <label class="switch">
+                                    <input type="checkbox" id="turn_buff" onchange="updateAttack()">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="toggle-label">ターン攻撃力アップ</span>
+                            </div>
+                        </div>
+                        <div class="base-attack">
+                            <h3>バフ後想定攻撃力（目安です）: <span id="buffed_attack">0</span></h3>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="skill_mult"><h3>特技倍率(%)</h3></label>
+                            <input type="number" id="skill_mult" name="skill_mult" step="0.01">
+                        </div>
+
+                        <div class="input-group">
+
+                            <label for="rank_power"><h3>威力UP総合計値(%)</h3></label>
+                            <input type="number" id="rank_power" name="rank_power" step="0.01">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="batsgun"><h3>ばつぐん　総合計値(%)</h3></label>
+                            <input type="number" id="batsgun" name="batsgun" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 受ける側 -->
+                <div class="defense-side">
+                    <div class="section">
+                        <h2>受ける側</h2>
+                        <div class="input-group">
+                            <label for="defense"><h3>守備力</h3></label>
+                            <input type="number" id="defense" name="defense">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="element_type">耐性を選択</label>
+                            <select id="element_type" name="element_type">
+                                <option value="大弱点(150%)">大弱点(150%)</option>
+                                <option value="弱点(125%)">弱点(125%)</option>
+                                <option value="等倍(100%)" selected>等倍(100%)</option>
+                                <option value="軽減(75%)">軽減(75%)</option>
+                                <option value="半減(50%)">半減(50%)</option>
+                                <option value="激減(25%)">激減(25%)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="arena_reduce">闘技場軽減(%)</label>
+                            <input type="number" id="arena_reduce" name="arena_reduce" value="30">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="calculation-wrapper">
+                <div class="calculation-container">
+                    <button type="submit" class="calculate-button">ダメージ想定</button>
+                    <div id="result"></div>
+                </div>
+            </div>
+        </form>
+
+    </div>
+    <script>
+        // メインの計算処理
+        document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('damage-form');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        var formData = {};
+        var inputs = form.querySelectorAll('input, select');
+
+        // チェックボックスの状態を確認
+        const ridaBuff = document.getElementById('rida_buff').checked;
+        const turnBuff = document.getElementById('turn_buff').checked;
+
+        inputs.forEach(function(input) {
+            // 攻撃力の場合、バフが有効ならバフ後の値を使用
+            if (input.id === 'attack' && (ridaBuff || turnBuff)) {
+                const buffedAttack = document.getElementById('buffed_attack').textContent;
+                formData[input.name] = buffedAttack;
+            } else {
+                formData[input.name] = input.value === '' ? '0' : input.value;
+            }
+        });
+
+            fetch('/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('result').innerHTML =
+                        `<div style="color: red; padding: 10px;">エラー: ${data.error}</div>`;
+                } else {
+                    document.getElementById('result').innerHTML =
+                        `<div style="color: green; padding: 10px; font-weight: bold;">
+                            ダメージ想定: ${data.single_attack_damage}
+                        </div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML =
+                    `<div style="color: red; padding: 10px;">
+                        エラーが発生しました: ${error.message}
+                    </div>`;
+            });
+        });
+    });
+
+        // 攻撃力自動計算の処理
+        function updateAttack() {
+        const attackInput = document.getElementById('attack');
+        const buffedAttackSpan = document.getElementById('buffed_attack');
+        const ridaBuff = document.getElementById('rida_buff').checked;
+        const turnBuff = document.getElementById('turn_buff').checked;
+
+        // 入力された攻撃力を取得
+        let baseAttack = attackInput.value ? parseInt(attackInput.value) : 0;
+
+        // バフを適用した値を計算
+        let buffedAttack = baseAttack;
+        if (ridaBuff) {
+            buffedAttack = Math.floor(buffedAttack * 1.11);
+        }
+        if (turnBuff) {
+            buffedAttack = Math.floor(buffedAttack * 1.11);
+        }
+
+        // バフ後の値を表示
+        buffedAttackSpan.textContent = buffedAttack;
+        }
+
+            // 攻撃力入力時にも更新
+            document.getElementById('attack').addEventListener('input', function() {
+                updateAttack();
+            });
+        </script>
+
+        <div class="footer-section">
+            こちらはタクトサーチ様などの資料を参考に作成しました。<br>
+            ご支援、フィードバックは今後の物理計算以外でも励みになります。<br>
+            他にもバグや露骨な計算違いがありましたらご一報下さい。<br>
+            また、当アプリを参考にして行った戦闘や闘技場の結果に関しては、責任を負いかねます。<br>
+            テスト段階である点をご理解した上でご利用下さい。<br>
+            <br>
+            また、当サイトはドラクエタクト公式とは一切関係はございません。<br>
+            個人的な解析サイトとなります。すべての著作権はゲーム制作社様となります。<br>
+            <br>
+            <a href="{{ url_for('index') }}">詳細計算Ver.（トップ）</a>
+            <a href="{{ url_for('simple') }}">超簡易計算Ver.</a>
+            <a href="{{ url_for('other_page') }}" target="_blank">※使い方、ご注意点※</a>
+            <a href="{{ url_for('show_version') }}" target="_blank">バージョン情報</a>
+            <br>
+            ver1.4.0　<br>
+            <br>
+            お問い合わせ、ご質問はお気軽にどお尋ね下さい。<br>
+            XのID→@hansha_ohemaru　mail:msz006.kobo@gmail.com<br>
+            <br>
+            ©kobokobo All Right Reserved
+        </div>
+    </body>
+</html>

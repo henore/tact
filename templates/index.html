@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ドラクエタクト ダメージ計算</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 200px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header, .footer-section {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header a, .footer-section a {
+            color: #4CAF50;
+            text-decoration: none;
+            margin: 0 10px;
+            display: inline-block;
+        }
+
+        .header a:hover, .footer-section a:hover {
+            text-decoration: underline;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr)); /* 1:1の比率を強制 */
+            gap: 20px;
+            margin-bottom: 30px;
+            align-items: start; /* 上端揃え */
+        }
+
+        .attack-side, .defense-side {
+            width: 100%;
+        }
+
+        .section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section + .section {
+            margin-top: 20px; /* セクション間のマージン */
+        }
+
+        .section h2 {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4CAF50;
+        }
+
+        .section h3 {
+            margin: 15px 0;
+            color: #2E7D32;
+        }
+
+        .input-group {
+            display: flex;    
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: nowrap;
+        }
+
+        .input-group label {
+            width: 65%;
+            padding-right: 10px;
+            font-size: 0.95em;
+        }
+
+        .input-group input[type="number"],
+        .input-group select {
+            width: 35%;
+            min-width: 100px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .input-group input[type="range"] {
+            width: 50%;
+            float: right;
+        }
+
+        .input-group button{
+            float: center;
+        }
+
+        .calculation-wrapper {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 20px;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .calculation-container {
+            background: #fff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 800px;
+            width: 90%;
+            pointer-events: auto;
+            text-align: center;
+        }
+
+        .calculate-button {
+            padding: 12px 40px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .calculate-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        #result {
+            font-size: 1.2em;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+        }
+
+        .footer-section {
+            margin-bottom: 180px;
+        }        input[type="range"] {
+            width: 100%;
+            height: 40px;
+            margin-bottom: 10px;
+        }
+
+        .input-group button {
+            width: 15%;
+            height: 35px; /* ボタンの高さを50pxに設定 */
+            font-size: 15px; /* フォントサイズを18pxに設定 */
+        }
+
+        .buff-group input[type="range"] {
+            width: 50%;
+            float: right;
+        }
+
+        .input-group  span {
+            float: center;
+            font-size: 1.2em;
+            margin: 5px;
+        }
+
+
+        @media (max-width: 767px) {
+    .calculator-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    h2 {
+        background-color: #f8f8f8;/* 背景色を親要素と同じにする */
+        border-bottom: 2px solid #000; /* アンダーバーを残す */
+    }
+
+    .container {
+        padding-bottom: 100px;
+    }
+
+    /* スクロール可能なコンテナ 
+    .attack-side, .defense-side {
+        height: 50vh;
+        overflow-y: auto;
+        position: relative; /* 固定ヘッダーの基準位置 
+        margin-bottom: 15px;
+    }
+    */
+    /* 固定するヘッダー部分 
+    .attack-input, .def-input {
+        position: sticky;
+        top: 0;
+        background: #fff;
+        padding: 15px;
+        z-index: 10;
+        border-radius: 8px 8px 0 0;
+    }
+*/
+    .attack-input h2, .def-input h2 {
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #4CAF50;
+    }
+
+    /* スクロールバーのカスタマイズ 
+    .attack-side::-webkit-scrollbar,
+    .defense-side::-webkit-scrollbar {
+        width: 6px;
+    }*/
+
+    .attack-side::-webkit-scrollbar-track,
+    .defense-side::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .attack-side::-webkit-scrollbar-thumb,
+    .defense-side::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+    /* その他の既存スタイル */
+    .section {
+        padding: 15px;
+        margin-bottom: 15px;
+        background: #fff;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* 以下は既存のスタイルをそのまま維持 */
+    .section h3 {
+        margin: 10px 0 8px 0;
+        background: #fff;
+    }
+
+    .input-group {
+        margin-bottom: 6px;
+        min-height: 35px;
+    }
+
+    .input-group label {
+        width: 65%;
+        font-size: 0.9em;
+        padding-right: 8px;
+        line-height: 1.2;
+    }
+
+    .input-group input[type="number"],
+    .input-group select {
+        width: 35%;
+        min-width: 80px;
+        padding: 6px;
+        height: 32px;
+    }
+
+    /* 計算ボタン周りは変更なし */
+    .calculation-wrapper {
+        bottom: 10px;
+    }
+
+    .calculation-container {
+        padding: 15px;
+        width: 95%;
+    }
+
+    .calculate-button {
+        padding: 10px 30px;
+        font-size: 16px;
+    }
+
+    .footer-section {
+        margin-bottom: 100px;
+    }
+
+    .input-group button {
+            width: 35%;
+            height: 60px; /* ボタンの高さを50pxに設定 */
+            font-size: 20px; /* フォントサイズを18pxに設定 */
+        }
+
+        .buff-group input[type="range"] {
+            width: 100%;
+            float: right;
+        }
+
+        .input-group span {
+            float: center;
+            font-size: 20px;
+            margin: 15px;
+        }
+}
+    </style>
+
+</head>
+<body>
+    <div class="container">
+        <h3>ドラクエタクト 物理ダメージ計算 WEBアプリ</h3>
+
+        <div class="header">
+            <a href="{{ url_for('index') }}">詳細計算Ver.（トップ）</a>
+            <a href="{{ url_for('simple') }}">超簡易計算Ver.</a>
+            <a href="{{ url_for('other_page') }}" target="_blank">※使い方、ご注意点※</a>
+            <a href="{{ url_for('show_version') }}" target="_blank">・バージョン情報</a>
+        </div>
+
+
+    <form id="damage-form">
+        <div class="calculator-grid">
+
+
+        <div class="input-group">
+            <!--攻撃側ブロック-->
+                    <!-- 基本パラメータ -->
+
+            <div class="attack-side">
+                <div class="attack-input">
+            <h2>攻撃側</h2>
+            </div>
+            <div class="section">
+                <h3>攻撃力</h3>
+                    <div class="input-group">
+                    <input type="range" id="attack" name="attack" min="0" max="1500" step="1" value="500" style="width: 100%; " >
+                    <span id="attackValue">500</span>
+                    <button type="button" onmousedown="startIncrement('attack')" onmouseup="stopIncrement()" onmouseleave="stopIncrement()" ontouchstart="startIncrement('attack')" ontouchend="stopIncrement()">+1</button>
+                </div>
+                </div>
+                <div class="section">
+                    <div class="input-group">
+                    <label for="skill_mult"><h3>特技倍率(%)</h3></label>
+                    <input type="number" id="skill_mult" name="skill_mult">
+                </div>
+                </div>
+        <!-- 威力アップ系 -->
+        <div class="section">
+            <h3>威力アップ総合計値(ばつぐんは除外) </h3>
+            <div class="input-group">
+                <input type="range" id="leader_power" name="leader_power" min="0" max="100" step="0.5" value="0" style="width: 70%;">
+                <span id="leader_powerValue">0%</span>
+                <button type="button" onmousedown="startIncrement('leader_power')" onmouseup="stopIncrement()" onmouseleave="stopIncrement()" ontouchstart="startIncrement('leader_power')" ontouchend="stopIncrement()">+0.5</button>
+            </div>
+        </div>
+
+<!-- バフ系 -->
+        <div class="section">
+            <h3>各種バフ</h3>
+            <div class="input-group" >
+                <label for="tension">テンション</label>
+                <input type="range" id="tension" name="tension" min="0" max="100" step="20" value="0" style="width: 40%;">
+                <span id="tensionValue">0%</span>
+            </div>
+            <div class="input-group">
+                <label for="gangan">ガンガン系</label>
+                <input type="range" id="gangan" name="gangan" min="0" max="90" step="15" value="0" style="width: 40%;">
+                <span id="ganganValue">0%</span>
+            </div>
+            <div class="input-group">
+                <label for="anger">憤怒、不屈</label>
+                <input type="range" id="anger" name="anger" min="0" max="50" step="50" value="0" style="width: 40%;">
+                <span id="angerValue">0%</span>
+            </div>
+            <div class="input-group">
+                <label for="force">フォース状態</label>
+                <input type="range" id="force" name="force" min="0" max="20" step="20" value="0" style="width: 40%;">
+                <span id="forceValue">0%</span>
+            </div>
+            <div class="input-group">
+                <label for="morale">士気高揚</label>
+                <input type="range" id="morale" name="morale" min="0" max="10" step="10" value="0" style="width: 40%;">
+                <span id="moraleValue">0%</span>
+            </div>
+            <div class="input-group">
+                <label for="formation_buff">陣の展開</label>
+                <input type="range" id="formation_buff" name="formation_buff" min="0" max="10" step="10" value="0" style="width: 40%;">
+                <span id="formation_buffValue">0%</span>
+            </div>
+            <div class="input-group">
+                <label for="zone_buff">ゾーン状態</label>
+                <input type="range" id="zone_buff" name="zone_buff" min="0" max="20" step="20" value="0" style="width: 40%;">
+                <span id="zone_buffValue">0%</span>
+            </div>
+            <div class="input-group">
+                <label for="hp_buff">HP条件バフ</label>
+                <input type="range" id="hp_buff" name="hp_buff" min="0" max="100" step="10" value="0" style="width: 40%;">
+                <span id="hp_buffValue">0%</span>
+            </div>
+            <div class="input-group">
+                <label for="enhance">エンハンス</label>
+                <input type="range" id="enhance" name="enhance" min="0" max="60" step="20" value="0" style="width: 40%;">
+                <span id="enhanceValue">0%</span>
+            </div>
+            <div class="input-group">
+                <label for="other_buff2">その他バフ予備</label>
+                <input type="number" id="other_buff2" name="other_buff2">
+            </div>
+        </div>
+        <!-- ばつぐん -->
+        <div class="section">
+                <h3>装備、開花などのばつぐん合計値</h3>
+                <div class="input-group">
+                <input type="range" id="batsugun" name="batsugun" min="0" max="40" step="0.5" value="0"  style="width: 70%;">
+                <span id="batsugunValue">0%</span>
+                <button type="button" onmousedown="startIncrement('batsugun')" onmouseup="stopIncrement()" onmouseleave="stopIncrement()" ontouchstart="startIncrement('batsugun')" ontouchend="stopIncrement()">+0.5</button>
+            </div>
+        </div>
+        <!-- 攻撃回数 -->
+        <div class="section">
+            <h3>攻撃回数（通常は1回）</h3>
+            <div class="input-group">
+                <label for="attack_count">1度で2回攻撃以上の場合</label>
+                <input type="range" id="attack_count" name="attack_count" min="1" max="10" step="1" value="1" style="width: 30%;">
+                <span id="attack_countValue">1</span>
+                <button type="button" onmousedown="startIncrement('attack_count')" onmouseup="stopIncrement()" onmouseleave="stopIncrement()" ontouchstart="startIncrement('attack_count')" ontouchend="stopIncrement()">+1</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>デバフ系</h3>
+                <div class="input-group">
+                <label for="phys_down">物理耐性ダウン</label>
+                <input type="number" id="phys_down" name="phys_down">
+                    </div>
+                <div class="input-group">
+                <label for="element_down">属性耐性ダウン</label>
+                <input type="number" id="element_down" name="element_down">
+                    </div>
+                <div class="input-group">
+                <label for="damage_up">被ダメ上昇</label>
+                <input type="number" id="damage_up" name="damage_up">
+                    </div>
+                <div class="input-group">
+                <label for="other_debuff">その他デバフ予備</label>
+                <input type="number" id="other_debuff" name="other_debuff">
+                    </div>
+        </div>
+    
+
+        </div>
+        </div>
+
+            <!-- 受ける側のブロック -->
+            <div class="defense-side">
+                <div class="def-input">
+            <h2>受ける側</h2>
+        </div>
+        <div class="section">
+            <h3>守備力</h3>
+            <div class="input-group">
+                <input type="range" id="defense" name="defense" min="0" max="1500" step="1" value="400" style="width: 100%;">
+                <span id="defenseValue">400</span>
+                <button type="button" onmousedown="startIncrement('defense')" onmouseup="stopIncrement()" onmouseleave="stopIncrement()" ontouchstart="startIncrement('defense')" ontouchend="stopIncrement()">+1</button>
+
+            </div>
+        </div>
+        <!-- 属性相性の選択部分 -->
+        <div class="section">
+            <h3>耐性</h3>
+            <div class="input-group">
+                <label for="element_type">耐性を選択</label>
+                <select id="element_type" name="element_type">
+                    <option value="大弱点(150%)">大弱点(150%)</option>
+                    <option value="弱点(125%)">弱点(125%)</option>
+                    <option value="等倍(100%)" selected>等倍(100%)</option>
+                    <option value="軽減(75%)">軽減(75%)</option>
+                    <option value="半減(50%)">半減(50%)</option>
+                    <option value="激減(25%)">激減(25%)</option>
+                </select>
+                </div>
+                ※レックの無属性耐性はここを激減に設定で対応可
+        </div>
+                <!-- 属性相性の選択部分 -->
+                <div class="section">
+                    <h3>属性耐性〇%UP（物理を除く）</h3>
+                    <div class="input-group">
+                        <label for="awaken_resist">開花対応（フル開花は基本5%）</label>
+                        <input type="range" id="awaken_resist" name="awaken_resist" min="0" max="5" step="5" value="0" >
+                        <span id="awaken_resistValue">0%</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="equip_resist">装備、アクセでの耐性</label>
+                        <input type="range" id="equip_resist" name="equip_resist" min="0" max="50" step="1" value="0" >
+                        <span id="equip_resistValue">0%</span>
+                    </div>
+                </div>
+                <div class="section">
+                    <h3>すべてダメージ軽減計算</h3>
+                    <div class="input-group">
+                        <label for="panel_all_reduce">パネル軽減（フル解放基本5～7.5%）</label>
+                        <input type="range" id="panel_all_reduce" name="panel_all_reduce" min="0" max="7.5" step="0.5" value="0" >
+                        <span id="panel_all_reduceValue">0%</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="awaken_all_reduce">開花キャラ（基本1%）</label>
+                        <input type="range" id="awaken_all_reduce" name="awaken_all_reduce" min="0" max="5" step="0.5" value="0" >
+                        <span id="awaken_all_reduceValue">0%</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="other_all_reduce">すべての軽減予備</label>
+                        <input type="number" id="other_all_reduce" name="other_all_reduce">
+                    </div>
+                </div>
+
+                <!-- 物理耐性系 -->
+                <div class="section">
+                    <h3>物理耐性の計算</h3>
+                    <div class="input-group">
+                        <label for="char_resist">ドレアム、大魔王等耐性</label>
+                        <input type="range" id="char_resist" name="char_resist" min="0" max="30" step="30" value="0" >
+                        <span id="char_resistValue">0%</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="equip_phys_resist">装備,開花,属性の物理耐性合計</label>
+                        <input type="range" id="equip_phys_resist" name="equip_phys_resist" min="0" max="70" step="0.5" value="0" style="width: 70%;">
+                        <span id="equip_phys_resistValue">0%</span>
+                        <button type="button" onmousedown="startIncrement('equip_phys_resist')" onmouseup="stopIncrement()" onmouseleave="stopIncrement()" ontouchstart="startIncrement('equip_phys_resist')" ontouchend="stopIncrement()">+0.5</button>
+                    </div>
+                        <div class="input-group">
+                                <label for="other_phys_resist">王子ピサロ耐性バラマキ</label>
+                                <input type="range" id="other_phys_resist" name="other_phys_resist" min="0" max="45" step="15" value="0">
+                                <span id="other_phys_resistValue">0%</span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>標準軽減・バフ</h3>
+                    <div class="input-group">
+                        <label for="hero_reduce">勇者系、魔王系軽減</label>
+                        <input type="range" id="hero_reduce" name="hero_reduce" min="0" max="50" step="10" value="0" >
+                        <span id="hero_reduceValue">0%</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="barrier">バリア系</label>
+                        <input type="range" id="barrier" name="barrier" min="0" max="100" step="10" value="0">
+                        <span id="barrierValue">0%</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="protect">まもつかのバラマキ</label>
+                        <input type="range" id="protect" name="protect" min="0" max="20" step="20" value="0" >
+                        <span id="protectValue">0%</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="formation_reduce">陣展開</label>
+                        <input type="range" id="formation_reduce" name="formation_reduce" min="0" max="10" step="10" value="0" >
+                        <span id="formation_reduceValue">0%</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="zone_reduce">ゾーン状態軽減</label>
+                        <input type="range" id="zone_reduce" name="zone_reduce" min="0" max="20" step="20" value="0" >
+                        <span id="zone_reduceValue">0%</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="support_reduce">補助キャラ軽減</label>
+                        <input type="range" id="support_reduce" name="support_reduce" min="0" max="100" step="10" value="0" >
+                        <span id="support_reduceValue">0%</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="force_reduce">フォース軽減</label>
+                        <input type="range" id="force_reduce" name="force_reduce" min="0" max="20" step="20" value="0" >
+                        <span id="force_reduceValue">0%</span>
+                    </div>
+                        <div class="input-group">
+                        <label for="arena_reduce">闘技場補正</label>
+                        <input type="number" id="arena_reduce" name="arena_reduce" value="30">
+                            </div>
+                        <div class="input-group">
+                        <label for="other_reduce1">軽減予備</label>
+                        <input type="number" id="other_reduce1" name="arena_reduce1">
+                            </div>
+                </div>
+
+
+            </div>
+        </div>
+            <div class="calculation-wrapper">
+                <div class="calculation-container">
+                    <button type="submit" class="calculate-button">ダメージ想定</button>
+                    <div id="result"></div>
+                    <div id="process"></div>
+                </div>
+            </div>
+        </form>
+
+<script>
+
+// 定数定義
+const SLIDER_CONFIGS = {
+    attack: { min: 0, max: 1500, step: 1, defaultValue: 500 },
+    defense: { min: 0, max: 1500, step: 1, defaultValue: 400 },
+    leader_power: { min: 0, max: 100, step: 0.5, defaultValue: 0 },
+    tension: { min: 0, max: 100, step: 20, defaultValue: 0 },
+    gangan: { min: 0, max: 90, step: 15, defaultValue: 0 },
+    anger: { min: 0, max: 50, step: 50, defaultValue: 0 },
+    force: { min: 0, max: 20, step: 20, defaultValue: 0 },
+    morale: { min: 0, max: 10, step: 10, defaultValue: 0 },
+    formation_buff: { min: 0, max: 10, step: 10, defaultValue: 0 },
+    zone_buff: { min: 0, max: 20, step: 20, defaultValue: 0 },
+    hp_buff: { min: 0, max: 100, step: 10, defaultValue: 0 },
+    enhance: { min: 0, max: 60, step: 20, defaultValue: 0 },
+    batsugun: { min: 0, max: 40, step: 0.5, defaultValue: 0 },
+    attack_count: { min: 1, max: 10, step: 1, defaultValue: 1 },
+    awaken_resist: { min: 0, max: 5, step: 5, defaultValue: 0 },
+    equip_resist: { min: 0, max: 50, step: 1, defaultValue: 0 },
+    panel_all_reduce: { min: 0, max: 7.5, step: 0.5, defaultValue: 0 },
+    awaken_all_reduce: { min: 0, max: 5, step: 0.5, defaultValue: 0 },
+    char_resist: { min: 0, max: 30, step: 30, defaultValue: 0 },
+    equip_phys_resist: { min: 0, max: 70, step: 0.5, defaultValue: 0 },
+    other_phys_resist: { min: 0, max: 60, step: 15, defaultValue: 0 },
+    hero_reduce: { min: 0, max: 50, step: 10, defaultValue: 0 },
+    barrier: { min: 0, max: 100, step: 10, defaultValue: 0 },
+    protect: { min: 0, max: 20, step: 20, defaultValue: 0 },
+    formation_reduce: { min: 0, max: 10, step: 10, defaultValue: 0 },
+    zone_reduce: { min: 0, max: 20, step: 20, defaultValue: 0 },
+    support_reduce: { min: 0, max: 100, step: 10, defaultValue: 0 },
+    force_reduce: { min: 0, max: 20, step: 20, defaultValue: 0 }
+};
+
+// スライダー値の更新を管理するクラス
+class SliderManager {
+    constructor() {
+        this.incrementInterval = null;
+    }
+
+    // スライダー値の更新
+    updateSliderValue(id, value) {
+        const element = document.getElementById(`${id}Value`);
+        if (element) {
+            const config = SLIDER_CONFIGS[id];
+            const suffix = this.shouldAddPercentSuffix(id) ? '%' : '';
+            element.textContent = value + suffix;
+        }
+    }
+
+    // パーセント表示が必要なスライダーかどうかを判定
+    shouldAddPercentSuffix(id) {
+        const nonPercentageSliders = ['attack', 'defense', 'attack_count'];
+        return !nonPercentageSliders.includes(id);
+    }
+
+    // インクリメント処理の開始
+    startIncrement(id) {
+        this.incrementValue(id);
+        this.incrementInterval = setInterval(() => this.incrementValue(id), 100);
+    }
+
+    // インクリメント処理の停止
+    stopIncrement() {
+        clearInterval(this.incrementInterval);
+    }
+
+    // 値のインクリメント
+    incrementValue(id) {
+        const slider = document.getElementById(id);
+        if (!slider) return;
+
+        const config = SLIDER_CONFIGS[id];
+        if (!config) return;
+
+        const currentValue = parseFloat(slider.value);
+        if (currentValue < config.max) {
+            const newValue = currentValue + config.step;
+            slider.value = newValue;
+            this.updateSliderValue(id, newValue);
+        }
+    }
+}
+
+// フォームデータの管理クラス
+class FormDataManager {
+    constructor() {
+        this.form = document.getElementById('damage-form');
+    }
+
+    // フォームデータの収集
+    collectFormData() {
+        const formData = {};
+        const inputs = this.form.querySelectorAll('input, select');
+
+        inputs.forEach(input => {
+            if (input.type === 'radio') {
+                if (input.checked) {
+                    formData[input.name] = input.value;
+                }
+            } else if (input.type === 'checkbox') {
+                if (!formData[input.name]) {
+                    formData[input.name] = [];
+                }
+                if (input.checked) {
+                    formData[input.name].push(input.value);
+                }
+            } else {
+                formData[input.name] = input.value === '' ? '0' : input.value;
+            }
+        });
+
+        return formData;
+    }
+
+    // 計算結果の表示
+    displayResult(data) {
+        const resultElement = document.getElementById('result');
+        if (data.error) {
+            resultElement.innerHTML = `
+                <div style="color: red; padding: 10px;">エラー: ${data.error}</div>
+            `;
+        } else {
+            resultElement.innerHTML = `
+                <div style="color: green; padding: 10px; font-weight: bold;">
+                    1回あたりダメージ想定: ${data.single_attack_damage}
+                    <br><br>最終ダメージ想定: ${data.total_attack_damage}
+                </div>
+            `;
+        }
+    }
+}
+
+// APIとの通信を管理するクラス
+class ApiManager {
+    async calculateDamage(formData) {
+        try {
+            const response = await fetch('/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('API Error:', error);
+            return { error: error.message };
+        }
+    }
+}
+
+// メインの初期化処理
+document.addEventListener('DOMContentLoaded', function() {
+    const sliderManager = new SliderManager();
+    const formManager = new FormDataManager();
+    const apiManager = new ApiManager();
+
+    // スライダーの初期化
+    Object.entries(SLIDER_CONFIGS).forEach(([id, config]) => {
+        const slider = document.getElementById(id);
+        if (slider) {
+            slider.value = config.defaultValue;
+            sliderManager.updateSliderValue(id, config.defaultValue);
+        }
+    });
+
+    // インクリメントボタンのイベントリスナー設定
+    document.querySelectorAll('button[type="button"]').forEach(button => {
+        const targetId = button.getAttribute('onmousedown')?.match(/'([^']+)'/)?.[1];
+        if (targetId) {
+            button.onmousedown = () => sliderManager.startIncrement(targetId);
+            button.onmouseup = () => sliderManager.stopIncrement();
+            button.onmouseleave = () => sliderManager.stopIncrement();
+            button.ontouchstart = () => sliderManager.startIncrement(targetId);
+            button.ontouchend = () => sliderManager.stopIncrement();
+        }
+    });
+
+    // 計算ボタンのイベントリスナー設定
+    document.querySelector('.calculate-button').addEventListener('click', async function(e) {
+        e.preventDefault();
+        const formData = formManager.collectFormData();
+        const result = await apiManager.calculateDamage(formData);
+        formManager.displayResult(result);
+    });
+
+    // スライダー値の変更イベントリスナー設定
+    Object.keys(SLIDER_CONFIGS).forEach(id => {
+        const slider = document.getElementById(id);
+        if (slider) {
+            slider.addEventListener('input', function() {
+                sliderManager.updateSliderValue(id, this.value);
+            });
+        }
+    });
+});
+        </script>
+
+    <div class="footer-section">
+        こちらはタクトサーチ様などの資料を参考に作成しました。<br>
+        ご支援、フィードバックは今後の物理計算以外でも励みになります。<br>
+        他にもバグや露骨な計算違いがありましたらご一報下さい。<br>
+        また、当アプリを参考にして行った戦闘や闘技場の結果に関しては、責任を負いかねます。<br>
+        テスト段階である点をご理解した上でご利用下さい。<br>
+        <br>
+        また、当サイトはドラクエタクト公式とは一切関係はございません。<br>
+        個人的な解析サイトとなります。すべての著作権はゲーム制作社様となります。<br>
+        <br>
+            <a href="{{ url_for('index') }}">詳細計算Ver.（トップ）</a>
+            <a href="{{ url_for('simple') }}">超簡易計算Ver.</a>
+            <a href="{{ url_for('other_page') }}" target="_blank">※使い方、ご注意点※</a>
+            <a href="{{ url_for('show_version') }}" target="_blank">・バージョン情報</a>
+        <br>
+        ver1.3.0　<br>
+        <br>
+        お問い合わせ、ご質問はお気軽にどお尋ね下さい。<br>
+        XのID→@hansha_ohemaru　mail:msz006.kobo@gmail.com<br>
+
+        ©kobokobo All Right Reserved
+            </div>
+            
+
+</body>
+</html>
