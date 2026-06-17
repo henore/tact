@@ -1,7 +1,11 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 import math
 
 app = Flask(__name__)
+
+@app.route('/ads.txt')
+def ads_txt():
+    return Response('google.com, pub-9265689402316542, DIRECT, f08c47fec0942fa0\n', mimetype='text/plain')
 
 @app.route('/')
 def index():
