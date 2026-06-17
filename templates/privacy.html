@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3JJ7Z1TNXY"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-3JJ7Z1TNXY');
+    </script>
+    <title>プライバシーポリシー - ドラクエタクト ダメージ計算</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: sans-serif; line-height: 1.8; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header, .footer-section {
+            background: #fff; padding: 10px; border-radius: 8px;
+            text-align: center; margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header a, .footer-section a {
+            color: #4CAF50; text-decoration: none; margin: 0 10px; display: inline-block;
+        }
+        .header a:hover, .footer-section a:hover { text-decoration: underline; }
+        .section {
+            background: #fff; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 12px;
+        }
+        .section h2 { margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #4CAF50; }
+        .section h3 { margin: 16px 0 8px; color: #2E7D32; }
+        .section p { margin-bottom: 12px; font-size: 0.95em; color: #333; }
+        .date { text-align: right; font-size: 0.85em; color: #888; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="{{ url_for('index') }}">詳細計算Ver.（トップ）</a>
+            <a href="{{ url_for('simple') }}">超簡易計算Ver.</a>
+            <a href="{{ url_for('other_page') }}" target="_blank">※使い方、ご注意点※</a>
+            <a href="{{ url_for('privacy') }}">プライバシーポリシー</a>
+        </div>
+
+        <div class="section">
+            <h2>プライバシーポリシー</h2>
+
+            <h3>アクセス解析について</h3>
+            <p>当サイトでは、アクセス解析のために Google Analytics を使用する場合があります。
+            Google Analytics は Cookie を使用してトラフィックデータを収集します。
+            このデータは匿名で収集されており、個人を特定するものではありません。</p>
+
+            <h3>広告について</h3>
+            <p>当サイトでは、第三者配信の広告サービス「Google AdSense」を利用する場合があります。
+            Googleなどの第三者配信事業者は、Cookieを使用して、ユーザーが当サイトや他のサイトに過去にアクセスした情報に基づいて広告を配信することがあります。</p>
+            <p>ユーザーは、Googleの広告設定により、パーソナライズ広告を無効にできます。</p>
+
+            <h3>個人情報の取扱いについて</h3>
+            <p>当サイトでは、お問い合わせ等により取得した情報を、回答や連絡のために利用します。
+            取得した個人情報を、法令に基づく場合を除き、本人の同意なく第三者に提供することはありません。</p>
+
+            <h3>免責事項</h3>
+            <p>当サイトの掲載情報については、可能な限り正確な情報を掲載するよう努めていますが、内容の正確性・安全性・有用性を保証するものではありません。
+            当サイトの利用により生じた損害等について、当サイト管理者は責任を負いかねます。</p>
+
+            <p class="date">制定日：2026年6月17日<br>運営者：dqt-damage.com 管理者</p>
+        </div>
+
+        <div class="footer-section">
+            <a href="{{ url_for('index') }}">詳細計算Ver.（トップ）</a>
+            <a href="{{ url_for('simple') }}">超簡易計算Ver.</a>
+            <a href="{{ url_for('other_page') }}" target="_blank">※使い方、ご注意点※</a>
+            <a href="{{ url_for('privacy') }}">プライバシーポリシー</a>
+        </div>
+    </div>
+</body>
+</html>

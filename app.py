@@ -19,6 +19,10 @@ def other_page():
 def show_version():
     return render_template('ver.html')
 
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
 def safe_float(value, default=0.0):
     """
     安全に浮動小数点数に変換する関数
