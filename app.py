@@ -71,10 +71,14 @@ def calculate():
        damage = calculate_base_damage(attack, defense)
        process.append(f"基本ダメージ: {damage:.4f}")
 
+       # 会心の一撃の基本ダメージ（攻撃力を2分の1にせず、守備力を加味しない）
+       critical_damage = attack
+
        # 2. 特技倍率（小数点保持）
        skill_mult = safe_float(data.get("skill_mult"))
        if skill_mult:
            damage = damage * (skill_mult/100)
+           critical_damage = critical_damage * (skill_mult/100)
            process.append(f"特技倍率適用後: {damage:.4f}")
 
        # 3. 威力アップ（小数点保持）
@@ -90,24 +94,28 @@ def calculate():
        if any(power_ups):
            power_total = sum(power_ups)
            damage = damage * (1 + power_total/100)
+           critical_damage = critical_damage * (1 + power_total/100)
            process.append(f"威力アップ適用後: {damage:.4f}")
 
-       # 4. バフ系（小数点保持）
+       # 4. バフ・デバフ系（すべて乗算）
        buff_keys = ["tension", "anger", "morale", "formation_buff",
                    "gangan", "force", "zone_buff", "hp_buff",
-                   "other_buff1", "other_buff2","damage_up","enhance"]
+                   "other_buff1", "other_buff2","damage_up","enhance",
+                   "element_down"]
        buff_coefficient = 1.0
        for key in buff_keys:
            buff_value = safe_float(data.get(key))
            if buff_value:
                buff_coefficient *= (1 + buff_value/100)
        damage = damage * buff_coefficient
-       process.append(f"バフ適用後: {damage:.4f}")
+       critical_damage = critical_damage * buff_coefficient
+       process.append(f"バフ・デバフ適用後: {damage:.4f}")
 
        # 5. ばつぐん効果（小数点保持）
        batsugun = safe_float(data.get("batsugun"))
        if batsugun:
            damage = damage * (1 + batsugun/100)
+           critical_damage = critical_damage * (1 + batsugun/100)
            process.append(f"ばつぐん効果適用後: {damage:.4f}")
 
        # 6. 属性相性（小数点保持）
@@ -117,18 +125,39 @@ def calculate():
        equip_resist = safe_float(data.get("equip_resist")) / 100
        actual_mult = base_mult - (awaken_resist + equip_resist)
        damage = damage * actual_mult
+       critical_damage = critical_damage * actual_mult
        process.append(f"属性補正適用後: {damage:.4f}")
 
        # 7. 物理耐性（小数点保持）
+       # 物理耐性の総合計を算出
        resist_total = 0.0
        resist_keys = ["char_resist", "equip_phys_resist", "equip_element_resist",
                      "awaken_phys_resist", "other_phys_resist"]
        for key in resist_keys:
            resist_value = safe_float(data.get(key))
            resist_total += resist_value
-       if resist_total > 0:
-           damage = damage * (1 - resist_total/100)
+
+       # デバフ（りゅうおう刻印・物理耐性ダウン）で総合計から相殺
+       ryuou_mark = safe_float(data.get("ryuou_mark"))
+       phys_down = safe_float(data.get("phys_down"))
+       total_phys_debuff = ryuou_mark + phys_down
+
+       effective_resist = resist_total - total_phys_debuff
+       debuff_overflow = 0.0
+       if effective_resist < 0:
+           debuff_overflow = abs(effective_resist)
+           effective_resist = 0
+
+       if effective_resist > 0:
+           damage = damage * (1 - effective_resist/100)
+           critical_damage = critical_damage * (1 - effective_resist/100)
            process.append(f"物理耐性適用後: {damage:.4f}")
+
+       # デバフ超過分を乗算で適用
+       if debuff_overflow > 0:
+           damage = damage * (1 + debuff_overflow/100)
+           critical_damage = critical_damage * (1 + debuff_overflow/100)
+           process.append(f"物理デバフ超過適用後: {damage:.4f}")
 
        # 8. パネル軽減
        panel_reduce = safe_float(data.get("panel_all_reduce"))
@@ -138,6 +167,10 @@ def calculate():
             damage = damage * 0.99 #1%の軽減
             damage = damage * 0.985 #1.5%の軽減
             damage = damage * 0.98 #2%の軽減
+            critical_damage = critical_damage * 0.995
+            critical_damage = critical_damage * 0.99
+            critical_damage = critical_damage * 0.985
+            critical_damage = critical_damage * 0.98
             process.append(f"パネル軽減適用後: {damage:.4f}")
 
        if panel_reduce == 7.5:
@@ -147,16 +180,23 @@ def calculate():
             damage = damage * 0.985 #1.5%の軽減
             damage = damage * 0.98 #2%の軽減
             damage = damage * 0.975 #2.5%の軽減
+            critical_damage = critical_damage * 0.995
+            critical_damage = critical_damage * 0.99
+            critical_damage = critical_damage * 0.985
+            critical_damage = critical_damage * 0.98
+            critical_damage = critical_damage * 0.975
             process.append(f"パネル軽減適用後: {damage:.4f}")
 
        if panel_reduce <= 4.5:
             damage = damage * (1 - panel_reduce/100)
+            critical_damage = critical_damage * (1 - panel_reduce/100)
             process.append(f"パネル軽減適用後: {damage:.4f}")
 
             #開花軽減
        awaken_all_reduce = safe_float(data.get("awaken_all_reduce"))
        if awaken_all_reduce:
             damage = damage * (1 - awaken_all_reduce/100)
+            critical_damage = critical_damage * (1 - awaken_all_reduce/100)
             process.append(f"開花軽減適用後: {damage:.4f}")
 
        # 9. 軽減系（切り捨て）
@@ -170,22 +210,29 @@ def calculate():
                reduction_coefficient *= (1 - reduction/100)
        damage =  damage * reduction_coefficient
        damage = math.floor( damage )
+       critical_damage = critical_damage * reduction_coefficient
+       critical_damage = math.floor( critical_damage )
        process.append(f"軽減適用後: {damage}")
 
         # 攻撃回数の適用
        attack_count = safe_float(data.get("attack_count", 1))
        if attack_count > 1:
             total_attack_damage = damage * attack_count
+            total_critical_damage = critical_damage * attack_count
             process.append(f"攻撃回数 {attack_count} 回適用後: {total_attack_damage}")
 
             result = {
                 'single_attack_damage': damage,
-                'total_attack_damage': total_attack_damage
+                'total_attack_damage': total_attack_damage,
+                'single_critical_damage': critical_damage,
+                'total_critical_damage': total_critical_damage
             }
        else:
             result = {
                 'single_attack_damage': damage,
-                'total_attack_damage': damage
+                'total_attack_damage': damage,
+                'single_critical_damage': critical_damage,
+                'total_critical_damage': critical_damage
             }
 
        return jsonify(result)
