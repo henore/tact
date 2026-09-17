@@ -109,7 +109,7 @@ def calculate():
        buff_keys = ["tension", "anger", "morale", "formation_buff",
                    "gangan", "force", "zone_buff", "hp_buff",
                    "other_buff1", "other_buff2","damage_up","enhance",
-                   "element_down"]
+                   "hero_aura", "element_down"]
        buff_coefficient = 1.0
        for key in buff_keys:
            buff_value = safe_float(data.get(key))

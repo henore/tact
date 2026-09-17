@@ -12,6 +12,7 @@ const SLIDER_CONFIGS = {
     zone_buff: { min: 0, max: 20, step: 20, defaultValue: 0 },
     hp_buff: { min: 0, max: 100, step: 10, defaultValue: 0 },
     enhance: { min: 0, max: 60, step: 20, defaultValue: 0 },
+    hero_aura: { min: 0, max: 60, step: 15, defaultValue: 0 },
     batsugun: { min: 0, max: 40, step: 0.5, defaultValue: 0 },
     attack_count: { min: 1, max: 10, step: 1, defaultValue: 1 },
     awaken_resist: { min: 0, max: 5, step: 5, defaultValue: 0 },
