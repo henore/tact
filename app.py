@@ -27,6 +27,14 @@ def show_version():
 def privacy():
     return render_template('privacy.html')
 
+@app.route("/ads.txt")
+def ads_txt():
+    return (
+        "google.com, pub-9265689402316542, DIRECT, f08c47fec0942fa0\n",
+        200,
+        {"Content-Type": "text/plain; charset=utf-8"}
+    )
+
 def safe_float(value, default=0.0):
     """
     安全に浮動小数点数に変換する関数
